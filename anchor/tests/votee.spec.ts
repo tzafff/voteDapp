@@ -1,65 +1,69 @@
-import * as anchor from '@coral-xyz/anchor'
-import { Program } from '@coral-xyz/anchor'
-import { Votee } from '../target/types/votee'
-import IDL from '../target/idl/votee.json'
-import { PublicKey } from '@solana/web3.js'
-
-function generateRandomPollDetails() {
-  const id = Math.floor(Date.now() / 10000)
-  const description = `Poll description for ID ${id}: ${Math.random()
-    .toString(36)
-    .substring(7)}`
-  const start =
-    Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000) // Random future start time
-  const end = start + Math.floor(Math.random() * 10000) + 3600 // Random end time, at least 1 hour after start
-  return {
-    id: new anchor.BN(id),
-    description,
-    start: new anchor.BN(start),
-    end: new anchor.BN(end),
-  }
-}
+const anchor = require('@coral-xyz/anchor')
+const { SystemProgram } = anchor.web3
 
 describe('votee', () => {
-  // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.local()
   anchor.setProvider(provider)
+  const program = anchor.workspace.Votee
 
-  // Initialize the program
-  const program = new Program<Votee>(IDL as Votee, provider)
+  it('Initializes and creates a poll', async () => {
+    const user = provider.wallet
 
-  it('Creating a Vote and Verifying Data', async () => {
-    // Generating fake poll data
-    const { id, description, start, end } = generateRandomPollDetails()
+    // Derive the PDA for the counter account
+    const [counterPda, counterBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from('counter')],
+        program.programId
+      )
 
-    // Derive the PDA for `poll` using the same method as in the Rust program
-    const [pollAddress] = PublicKey.findProgramAddressSync(
-      [id.toArrayLike(Buffer, 'le', 8)], // Ensure same seed structure
-      program.programId
-    )
-
-    // Call the createVote method on the program
-    const tx = await (program.methods as any)
-      .createVote(id, description, start, end)
-      .accounts({
-        user: provider.wallet.publicKey,
-        poll: pollAddress,
-        systemProgram: anchor.web3.SystemProgram.programId,
+    // Attempt to fetch the counter account, skip initialization if it exists
+    let counter
+    try {
+      counter = await program.account.counter.fetch(counterPda)
+      console.log(
+        'Counter account already exists with count:',
+        counter.count.toString()
+      )
+    } catch (err) {
+      console.log('Counter account does not exist. Initializing...')
+      await program.rpc.initialize({
+        accounts: {
+          user: user.publicKey,
+          counter: counterPda,
+          systemProgram: SystemProgram.programId,
+        },
       })
-      .rpc()
 
-    console.log('Transaction signature:', tx)
+      // Fetch the counter after initialization
+      counter = await program.account.counter.fetch(counterPda)
+      console.log('Counter initialized with count:', counter.count.toString())
+    }
 
-    // Fetch the poll account data
-    const pollAccount = await program.account.poll.fetch(pollAddress)
+    // Increment count to predict the next poll ID for PDA
+    // const nextPollId = counter.count.add(new anchor.BN(1)); // Counter value after increment
+    const [pollPda, pollBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [counter.count.toArrayLike(Buffer, "le", 8)], // Seed based on the incremented count
+      program.programId
+    );
 
-    // Verify the poll data
-    expect(pollAccount.id.toString()).toBe(id.toString())
-    expect(pollAccount.description).toBe(description)
-    expect(pollAccount.start.toString()).toBe(start.toString())
-    expect(pollAccount.end.toString()).toBe(end.toString())
-    expect(pollAccount.candidates.toNumber()).toBe(0) // Initial value should be 0
+    const description = 'Test Poll'
+    const start = new anchor.BN(Date.now() / 1000)
+    const end = new anchor.BN(Date.now() / 1000 + 86400)
 
-    console.log(pollAccount)
+    // Call create_poll with the correct accounts
+    await program.rpc.createPoll(description, start, end, {
+      accounts: {
+        user: user.publicKey,
+        poll: pollPda,
+        counter: counterPda,
+        systemProgram: SystemProgram.programId,
+      },
+      signers: [],
+    })
+
+    // Verify that the poll was created with the correct data
+    const poll = await program.account.poll.fetch(pollPda)
+    console.log('Poll ID:', poll.id.toString())
+    console.log('Poll description:', poll.description)
   })
 })

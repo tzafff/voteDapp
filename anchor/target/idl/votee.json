@@ -1,5 +1,5 @@
 {
-  "address": "2JcicnBke69MZxBayaEwgJzqmxFHwaUBwcLc56NJ7LX6",
+  "address": "GxABvVTi8bSEYwy9SyoAx54zFvLkLrjo81dZTvQ1s89k",
   "metadata": {
     "name": "votee",
     "version": "0.1.0",
@@ -8,16 +8,16 @@
   },
   "instructions": [
     {
-      "name": "create_vote",
+      "name": "create_poll",
       "discriminator": [
-        173,
-        115,
-        165,
-        78,
-        226,
-        132,
-        205,
-        254
+        182,
+        171,
+        112,
+        238,
+        6,
+        219,
+        14,
+        110
       ],
       "accounts": [
         {
@@ -31,8 +31,29 @@
           "pda": {
             "seeds": [
               {
-                "kind": "arg",
-                "path": "poll_id"
+                "kind": "account",
+                "path": "counter.count",
+                "account": "Counter"
+              }
+            ]
+          }
+        },
+        {
+          "name": "counter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
               }
             ]
           }
@@ -43,10 +64,6 @@
         }
       ],
       "args": [
-        {
-          "name": "id",
-          "type": "u64"
-        },
         {
           "name": "description",
           "type": "string"
@@ -60,9 +77,67 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "counter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
+    {
+      "name": "Counter",
+      "discriminator": [
+        255,
+        176,
+        4,
+        245,
+        188,
+        253,
+        124,
+        25
+      ]
+    },
     {
       "name": "Poll",
       "discriminator": [
@@ -77,7 +152,26 @@
       ]
     }
   ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "PollCounterUnderflow",
+      "msg": "Poll counter cannot be less than zero"
+    }
+  ],
   "types": [
+    {
+      "name": "Counter",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "count",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "Poll",
       "type": {

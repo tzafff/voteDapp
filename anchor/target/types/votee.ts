@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/votee.json`.
  */
 export type Votee = {
-  "address": "2JcicnBke69MZxBayaEwgJzqmxFHwaUBwcLc56NJ7LX6",
+  "address": "GxABvVTi8bSEYwy9SyoAx54zFvLkLrjo81dZTvQ1s89k",
   "metadata": {
     "name": "votee",
     "version": "0.1.0",
@@ -14,16 +14,16 @@ export type Votee = {
   },
   "instructions": [
     {
-      "name": "createVote",
+      "name": "createPoll",
       "discriminator": [
-        173,
-        115,
-        165,
-        78,
-        226,
-        132,
-        205,
-        254
+        182,
+        171,
+        112,
+        238,
+        6,
+        219,
+        14,
+        110
       ],
       "accounts": [
         {
@@ -37,8 +37,29 @@ export type Votee = {
           "pda": {
             "seeds": [
               {
-                "kind": "arg",
-                "path": "pollId"
+                "kind": "account",
+                "path": "counter.count",
+                "account": "counter"
+              }
+            ]
+          }
+        },
+        {
+          "name": "counter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
               }
             ]
           }
@@ -49,10 +70,6 @@ export type Votee = {
         }
       ],
       "args": [
-        {
-          "name": "id",
-          "type": "u64"
-        },
         {
           "name": "description",
           "type": "string"
@@ -66,9 +83,67 @@ export type Votee = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "counter",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
+    {
+      "name": "counter",
+      "discriminator": [
+        255,
+        176,
+        4,
+        245,
+        188,
+        253,
+        124,
+        25
+      ]
+    },
     {
       "name": "poll",
       "discriminator": [
@@ -83,7 +158,26 @@ export type Votee = {
       ]
     }
   ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "pollCounterUnderflow",
+      "msg": "Poll counter cannot be less than zero"
+    }
+  ],
   "types": [
+    {
+      "name": "counter",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "count",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "poll",
       "type": {
