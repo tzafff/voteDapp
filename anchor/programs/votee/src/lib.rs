@@ -2,11 +2,9 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("GxABvVTi8bSEYwy9SyoAx54zFvLkLrjo81dZTvQ1s89k");
+declare_id!("39iYECXn1q87xKCTdAGgbADtbcByTC4qdW8bkWH43evt");
 
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
-// pub const CANDIDATE_INIT_SPACE: usize = ANCHOR_DISCRIMINATOR_SIZE + 4 + 32 + 8 + 1;
-
 
 mod errors;
 mod states;
@@ -19,6 +17,9 @@ pub mod votee {
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         let counter = &mut ctx.accounts.counter;
         counter.count = 0;
+
+        let registerations = &mut ctx.accounts.registerations;
+        registerations.count = 0;
         Ok(())
     }
 
@@ -52,7 +53,7 @@ pub mod votee {
         if candidate.has_registered {
             return Err(errors::ErrorCode::CandidateNotRegistered.into());
         }
-        
+
         if voter.has_voted {
             return Err(errors::ErrorCode::VoterAlreadyVoted.into());
         }
@@ -63,13 +64,21 @@ pub mod votee {
         Ok(())
     }
 
-    pub fn register_candidate(ctx: Context<RegisterCandidate>, poll_id: u64, name: String) -> Result<()> {
+    pub fn register_candidate(
+        ctx: Context<RegisterCandidate>,
+        poll_id: u64,
+        name: String,
+    ) -> Result<()> {
         let candidate = &mut ctx.accounts.candidate;
         if candidate.has_registered {
             return Err(errors::ErrorCode::CandidateAlreadyRegistered.into());
         }
 
+        let registerations = &mut ctx.accounts.registerations;
+        registerations.count += 1;
+
         candidate.has_registered = true;
+        candidate.cid = registerations.count;
         candidate.poll_id = poll_id;
         candidate.name = name;
         candidate.votes += 1;
@@ -113,13 +122,28 @@ pub struct Initialize<'info> {
       space = ANCHOR_DISCRIMINATOR_SIZE + 8,
       seeds = [b"counter"],
       bump
-  )]
+    )]
     pub counter: Account<'info, Counter>,
+
+    #[account(
+      init,
+      payer = user,
+      space = ANCHOR_DISCRIMINATOR_SIZE + 8,
+      seeds = [b"registerations"],
+      bump
+    )]
+    pub registerations: Account<'info, Registerations>,
+
     pub system_program: Program<'info, System>,
 }
 
 #[account]
 pub struct Counter {
+    pub count: u64,
+}
+
+#[account]
+pub struct Registerations {
     pub count: u64,
 }
 
@@ -155,18 +179,16 @@ pub struct Vote<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 #[account]
 #[derive(InitSpace)]
 pub struct Candidate {
-    // pub cid: u64,
+    pub cid: u64,
     pub poll_id: u64,
     #[max_len(32)]
     pub name: String,
     pub votes: u64,
     pub has_registered: bool,
 }
-
 
 #[account]
 pub struct Voter {
@@ -180,13 +202,18 @@ pub struct RegisterCandidate<'info> {
         init, // Create the voter account if it doesn't exist
         payer = user,
         space = ANCHOR_DISCRIMINATOR_SIZE + Candidate::INIT_SPACE, // Account size
-        seeds = [poll_id.to_le_bytes().as_ref()],
+        seeds = [
+            poll_id.to_le_bytes().as_ref(),
+            registerations.count.to_le_bytes().as_ref()
+        ],
         bump
     )]
     pub candidate: Account<'info, Candidate>,
 
     #[account(mut)]
     pub user: Signer<'info>,
+
+    pub registerations: Account<'info, Registerations>,
 
     pub system_program: Program<'info, System>,
 }

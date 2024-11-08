@@ -15,6 +15,11 @@ describe('votee', () => {
       program.programId
     )
 
+    const [registerationsPda] = await PublicKey.findProgramAddress(
+      [Buffer.from('registerations')],
+      program.programId
+    )
+
     // Attempt to fetch the counter account, skip initialization if it exists
     let counter
     try {
@@ -29,6 +34,7 @@ describe('votee', () => {
         accounts: {
           user: user.publicKey,
           counter: counterPda,
+          registerations: registerationsPda,
           systemProgram: SystemProgram.programId,
         },
       })
@@ -75,19 +81,21 @@ describe('votee', () => {
     )
     const counter = await program.account.counter.fetch(counterPda)
 
-    // Get the poll by this poll ID
-    const [pollPda] = await PublicKey.findProgramAddress(
-      [counter.count.toArrayLike(Buffer, 'le', 8)], // Seed based on the incremented count
+    const [registerationsPda] = await PublicKey.findProgramAddress(
+      [Buffer.from('registerations')],
       program.programId
     )
 
+    const regs = await program.account.registerations.fetch(registerationsPda)
+
     const candidateName = 'Candidate1'
     const pollId = counter.count
-    // const cid = new anchor.BN(Date.now())
+    const cid = regs.count //.add(new anchor.BN(1))
+    
     const [candidatePda] = await PublicKey.findProgramAddress(
       [
         pollId.toArrayLike(Buffer, 'le', 8), // Little-endian bytes of poll_id
-        // cid.toArrayLike(Buffer, 'le', 8),
+        cid.toArrayLike(Buffer, 'le', 8),
       ],
       program.programId
     )
@@ -95,6 +103,7 @@ describe('votee', () => {
     await program.rpc.registerCandidate(pollId, candidateName, {
       accounts: {
         candidate: candidatePda,
+        registerations: registerationsPda,
         user: user.publicKey,
         systemProgram: SystemProgram.programId,
       },

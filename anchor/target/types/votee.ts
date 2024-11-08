@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/votee.json`.
  */
 export type Votee = {
-  "address": "GxABvVTi8bSEYwy9SyoAx54zFvLkLrjo81dZTvQ1s89k",
+  "address": "39iYECXn1q87xKCTdAGgbADtbcByTC4qdW8bkWH43evt",
   "metadata": {
     "name": "votee",
     "version": "0.1.0",
@@ -123,6 +123,33 @@ export type Votee = {
           }
         },
         {
+          "name": "registerations",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  101,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
@@ -150,6 +177,11 @@ export type Votee = {
               {
                 "kind": "arg",
                 "path": "pollId"
+              },
+              {
+                "kind": "account",
+                "path": "registerations.count",
+                "account": "registerations"
               }
             ]
           }
@@ -158,6 +190,9 @@ export type Votee = {
           "name": "user",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "registerations"
         },
         {
           "name": "systemProgram",
@@ -296,6 +331,19 @@ export type Votee = {
       ]
     },
     {
+      "name": "registerations",
+      "discriminator": [
+        240,
+        167,
+        231,
+        14,
+        202,
+        236,
+        249,
+        139
+      ]
+    },
+    {
       "name": "voter",
       "discriminator": [
         241,
@@ -342,6 +390,10 @@ export type Votee = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "cid",
+            "type": "u64"
+          },
           {
             "name": "pollId",
             "type": "u64"
@@ -396,6 +448,18 @@ export type Votee = {
           },
           {
             "name": "candidates",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "registerations",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "count",
             "type": "u64"
           }
         ]

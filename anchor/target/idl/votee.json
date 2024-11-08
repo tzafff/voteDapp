@@ -1,5 +1,5 @@
 {
-  "address": "GxABvVTi8bSEYwy9SyoAx54zFvLkLrjo81dZTvQ1s89k",
+  "address": "39iYECXn1q87xKCTdAGgbADtbcByTC4qdW8bkWH43evt",
   "metadata": {
     "name": "votee",
     "version": "0.1.0",
@@ -117,6 +117,33 @@
           }
         },
         {
+          "name": "registerations",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  101,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  115
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -144,6 +171,11 @@
               {
                 "kind": "arg",
                 "path": "poll_id"
+              },
+              {
+                "kind": "account",
+                "path": "registerations.count",
+                "account": "Registerations"
               }
             ]
           }
@@ -152,6 +184,9 @@
           "name": "user",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "registerations"
         },
         {
           "name": "system_program",
@@ -290,6 +325,19 @@
       ]
     },
     {
+      "name": "Registerations",
+      "discriminator": [
+        240,
+        167,
+        231,
+        14,
+        202,
+        236,
+        249,
+        139
+      ]
+    },
+    {
       "name": "Voter",
       "discriminator": [
         241,
@@ -336,6 +384,10 @@
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "cid",
+            "type": "u64"
+          },
           {
             "name": "poll_id",
             "type": "u64"
@@ -390,6 +442,18 @@
           },
           {
             "name": "candidates",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Registerations",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "count",
             "type": "u64"
           }
         ]
