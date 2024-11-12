@@ -27,16 +27,7 @@
         },
         {
           "name": "poll",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "counter.count",
-                "account": "Counter"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "counter",
@@ -164,21 +155,20 @@
       ],
       "accounts": [
         {
-          "name": "candidate",
+          "name": "poll",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "arg",
                 "path": "poll_id"
-              },
-              {
-                "kind": "account",
-                "path": "registerations.count",
-                "account": "Registerations"
               }
             ]
           }
+        },
+        {
+          "name": "candidate",
+          "writable": true
         },
         {
           "name": "user",
@@ -186,7 +176,8 @@
           "signer": true
         },
         {
-          "name": "registerations"
+          "name": "registerations",
+          "writable": true
         },
         {
           "name": "system_program",
@@ -281,7 +272,16 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "poll_id",
+          "type": "u64"
+        },
+        {
+          "name": "cid",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -376,6 +376,16 @@
       "code": 6004,
       "name": "CandidateNotRegistered",
       "msg": "Candidate is not in the poll"
+    },
+    {
+      "code": 6005,
+      "name": "PollNotActive",
+      "msg": "Poll not currently active"
+    },
+    {
+      "code": 6006,
+      "name": "PollDoesNotExist",
+      "msg": "Poll does not exist or not found"
     }
   ],
   "types": [
@@ -464,6 +474,14 @@
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "cid",
+            "type": "u64"
+          },
+          {
+            "name": "poll_id",
+            "type": "u64"
+          },
           {
             "name": "has_voted",
             "type": "bool"

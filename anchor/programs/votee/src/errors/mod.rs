@@ -11,5 +11,9 @@ pub enum ErrorCode {
     #[msg("Start date cannot be greater than end date")]
     InvalidDates,
     #[msg("Candidate is not in the poll")]
-    CandidateNotRegistered
+    CandidateNotRegistered,
+    #[msg("Poll not currently active")]
+    PollNotActive,
+    #[msg("Poll does not exist or not found")]
+    PollDoesNotExist
 }

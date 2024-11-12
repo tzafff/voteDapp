@@ -33,16 +33,7 @@ export type Votee = {
         },
         {
           "name": "poll",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "counter.count",
-                "account": "counter"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "counter",
@@ -170,21 +161,20 @@ export type Votee = {
       ],
       "accounts": [
         {
-          "name": "candidate",
+          "name": "poll",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "arg",
                 "path": "pollId"
-              },
-              {
-                "kind": "account",
-                "path": "registerations.count",
-                "account": "registerations"
               }
             ]
           }
+        },
+        {
+          "name": "candidate",
+          "writable": true
         },
         {
           "name": "user",
@@ -192,7 +182,8 @@ export type Votee = {
           "signer": true
         },
         {
-          "name": "registerations"
+          "name": "registerations",
+          "writable": true
         },
         {
           "name": "systemProgram",
@@ -287,7 +278,16 @@ export type Votee = {
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "pollId",
+          "type": "u64"
+        },
+        {
+          "name": "cid",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -382,6 +382,16 @@ export type Votee = {
       "code": 6004,
       "name": "candidateNotRegistered",
       "msg": "Candidate is not in the poll"
+    },
+    {
+      "code": 6005,
+      "name": "pollNotActive",
+      "msg": "Poll not currently active"
+    },
+    {
+      "code": 6006,
+      "name": "pollDoesNotExist",
+      "msg": "Poll does not exist or not found"
     }
   ],
   "types": [
@@ -470,6 +480,14 @@ export type Votee = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "cid",
+            "type": "u64"
+          },
+          {
+            "name": "pollId",
+            "type": "u64"
+          },
           {
             "name": "hasVoted",
             "type": "bool"
