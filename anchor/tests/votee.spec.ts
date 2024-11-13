@@ -6,7 +6,7 @@ describe('votee', () => {
   anchor.setProvider(provider)
   const program = anchor.workspace.Votee
 
-  let PID: any
+  let PID: any, CID: any
 
   it('Initializes and creates a poll', async () => {
     const user = provider.wallet
@@ -47,13 +47,13 @@ describe('votee', () => {
     }
 
     // Increment count to predict the next poll ID for PDA
-    const pollId = counter.count.add(new anchor.BN(1)) // Counter value after increment
+    PID = counter.count.add(new anchor.BN(1)) // Counter value after increment
     const [pollPda] = await PublicKey.findProgramAddress(
-      [pollId.toArrayLike(Buffer, 'le', 8)], // Seed based on the incremented count
+      [PID.toArrayLike(Buffer, 'le', 8)], // Seed based on the incremented count
       program.programId
     )
 
-    const description = 'Test Poll'
+    const description = `Test Poll #${PID}`
     const start = new anchor.BN(Date.now() / 1000)
     const end = new anchor.BN(Date.now() / 1000 + 86400)
 
@@ -71,8 +71,6 @@ describe('votee', () => {
     // Verify that the poll was created with the correct data
     const poll = await program.account.poll.fetch(pollPda)
     console.log('Poll:', poll)
-
-    PID = poll.id
   })
 
   it('Registers a candidate', async () => {
@@ -89,13 +87,13 @@ describe('votee', () => {
     )
 
     const regs = await program.account.registerations.fetch(registerationsPda)
-    const cid = regs.count.add(new anchor.BN(1))
+    CID = regs.count.add(new anchor.BN(1))
 
-    const candidateName = 'Candidate1'
+    const candidateName = `Candidate #${CID}`
     const [candidatePda] = await PublicKey.findProgramAddress(
       [
         PID.toArrayLike(Buffer, 'le', 8), // Little-endian bytes of poll_id
-        cid.toArrayLike(Buffer, 'le', 8),
+        CID.toArrayLike(Buffer, 'le', 8),
       ],
       program.programId
     )
@@ -114,62 +112,55 @@ describe('votee', () => {
     console.log('Candidate:', candidate)
   })
 
-  // it('Votes for a candidate', async () => {
-  //   const user = provider.wallet
+  it('Votes for a candidate', async () => {
+    const user = provider.wallet
 
-  //   const candidates = await program.account.candidate.all()
+    // Derive the PDA for the poll
+    const [pollPda] = await PublicKey.findProgramAddress(
+      [PID.toArrayLike(Buffer, 'le', 8)],
+      program.programId
+    )
 
-  //   if (candidates.length === 0) {
-  //     throw new Error('No candidates found')
-  //   }
+    // Derive the PDA for the candidate
+    const [candidatePda] = await PublicKey.findProgramAddress(
+      [PID.toArrayLike(Buffer, 'le', 8), CID.toArrayLike(Buffer, 'le', 8)],
+      program.programId
+    )
 
-  //   // Get the latest candidate (last element of the array)
-  //   const latestCandidate = candidates[candidates.length - 1]
-  //   const { pollId, cid } = latestCandidate.account
+    // Derive the PDA for the voter account
+    const [voterPda] = await PublicKey.findProgramAddress(
+      [
+        Buffer.from('voter'),
+        PID.toArrayLike(Buffer, 'le', 8),
+        user.publicKey.toBuffer(),
+      ],
+      program.programId
+    )
 
-  //   console.log(`Voting for Candidate: ${latestCandidate.account.name}`)
-  //   console.log(
-  //     `Poll ID: ${pollId.toString()}, Candidate ID: ${cid.toString()}`
-  //   )
+    const candidate = await program.account.candidate.fetch(candidatePda)
+    if (!candidate) {
+      throw new Error(`Candidate with ID ${CID} for poll ID ${PID} not found`)
+    }
 
-  //   // Derive the PDA for the poll
-  //   const [pollPda] = await PublicKey.findProgramAddress(
-  //     [pollId.toArrayLike(Buffer, 'le', 8)],
-  //     program.programId
-  //   )
+    // Perform the vote
+    await program.rpc.vote(PID, CID, {
+      accounts: {
+        user: user.publicKey,
+        poll: pollPda,
+        candidate: candidatePda,
+        voter: voterPda,
+        systemProgram: SystemProgram.programId,
+      },
+    })
 
-  //   // Derive the PDA for the candidate
-  //   const [candidatePda] = await PublicKey.findProgramAddress(
-  //     [pollId.toArrayLike(Buffer, 'le', 8), cid.toArrayLike(Buffer, 'le', 8)],
-  //     program.programId
-  //   )
+    const voterAccount = await program.account.voter.fetch(voterPda)
+    console.log('Voter Account:', voterAccount)
 
-  //   // Derive the PDA for the voter account
-  //   const [voterPda] = await PublicKey.findProgramAddress(
-  //     [
-  //       Buffer.from('voter'),
-  //       pollId.toArrayLike(Buffer, 'le', 8),
-  //       user.publicKey.toBuffer(),
-  //     ],
-  //     program.programId
-  //   )
-
-  //   // Perform the vote
-  //   await program.rpc.vote(pollId, cid, {
-  //     accounts: {
-  //       user: user.publicKey,
-  //       poll: pollPda,
-  //       candidate: candidatePda,
-  //       voter: voterPda,
-  //       systemProgram: SystemProgram.programId,
-  //     },
-  //   })
-
-  //   // Fetch and verify the updated candidate votes
-  //   const updatedCandidate = await program.account.candidate.fetch(candidatePda)
-  //   console.log(
-  //     'Candidate Votes after voting:',
-  //     updatedCandidate.votes.toString()
-  //   )
-  // })
+    // Fetch and verify the updated candidate votes
+    const updatedCandidate = await program.account.candidate.fetch(candidatePda)
+    console.log(
+      'Candidate Votes after voting:',
+      updatedCandidate.votes.toString()
+    )
+  })
 })

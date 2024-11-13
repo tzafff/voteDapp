@@ -46,33 +46,6 @@ pub mod votee {
         Ok(())
     }
 
-    pub fn vote(ctx: Context<Vote>, poll_id: u64, cid: u64) -> Result<()> {
-        let voter = &mut ctx.accounts.voter;
-        let candidate = &mut ctx.accounts.candidate;
-        // let poll = &mut ctx.accounts.poll;
-
-        if !candidate.has_registered || candidate.poll_id == poll_id {
-            return Err(errors::ErrorCode::CandidateNotRegistered.into());
-        }
-        
-        if voter.has_voted {
-            return Err(errors::ErrorCode::VoterAlreadyVoted.into());
-        }
-
-        // let current_timestamp = Clock::get()?.unix_timestamp as u64;
-        // if current_timestamp < poll.start || current_timestamp > poll.end {
-        //     return Err(errors::ErrorCode::PollNotActive.into());
-        // }
-
-        voter.poll_id = poll_id;
-        voter.cid = cid;
-        voter.has_voted = true;
-
-        candidate.votes += 1;
-
-        Ok(())
-    }
-
     pub fn register_candidate(
         ctx: Context<RegisterCandidate>,
         poll_id: u64,
@@ -95,6 +68,32 @@ pub mod votee {
         candidate.cid = registerations.count;
         candidate.poll_id = poll_id;
         candidate.name = name;
+
+        Ok(())
+    }
+
+    pub fn vote(ctx: Context<Vote>, poll_id: u64, cid: u64) -> Result<()> {
+        let voter = &mut ctx.accounts.voter;
+        let candidate = &mut ctx.accounts.candidate;
+        let poll = &mut ctx.accounts.poll;
+
+        if !candidate.has_registered || candidate.poll_id != poll_id {
+            return Err(errors::ErrorCode::CandidateNotRegistered.into());
+        }
+
+        if voter.has_voted {
+            return Err(errors::ErrorCode::VoterAlreadyVoted.into());
+        }
+
+        let current_timestamp = Clock::get()?.unix_timestamp as u64;
+        if current_timestamp < poll.start || current_timestamp > poll.end {
+            return Err(errors::ErrorCode::PollNotActive.into());
+        }
+
+        voter.poll_id = poll_id;
+        voter.cid = cid;
+        voter.has_voted = true;
+
         candidate.votes += 1;
 
         Ok(())
@@ -161,38 +160,6 @@ pub struct Registerations {
     pub count: u64,
 }
 
-#[derive(Accounts)]
-#[instruction(poll_id: u64, cid: u64)]
-pub struct Vote<'info> {
-    #[account(
-        init, // Create the voter account if it doesn't exist
-        payer = user,
-        space = ANCHOR_DISCRIMINATOR_SIZE + 25, // Account size
-        seeds = [b"voter", poll_id.to_le_bytes().as_ref(), user.key().as_ref()],
-        bump
-    )]
-    pub voter: Account<'info, Voter>, // Unique per poll and user
-
-    #[account(
-        mut,
-        seeds = [poll_id.to_le_bytes().as_ref()],
-        bump
-    )]
-    pub poll: Account<'info, Poll>, // Poll to be voted in
-
-    #[account(
-        mut,
-        seeds = [poll_id.to_le_bytes().as_ref(), cid.to_le_bytes().as_ref()],
-        bump
-    )]
-    pub candidate: Account<'info, Candidate>, // Candidate to receive the vote
-
-    #[account(mut)]
-    pub user: Signer<'info>, // Voter's signer account
-
-    pub system_program: Program<'info, System>,
-}
-
 #[account]
 #[derive(InitSpace)]
 pub struct Candidate {
@@ -202,13 +169,6 @@ pub struct Candidate {
     pub name: String,
     pub votes: u64,
     pub has_registered: bool,
-}
-
-#[account]
-pub struct Voter {
-    pub cid: u64,
-    pub poll_id: u64,
-    pub has_voted: bool,
 }
 
 #[derive(Accounts)]
@@ -240,6 +200,45 @@ pub struct RegisterCandidate<'info> {
         mut, // Modify the `registerations` account
     )]
     pub registerations: Account<'info, Registerations>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[account]
+pub struct Voter {
+    pub cid: u64,
+    pub poll_id: u64,
+    pub has_voted: bool,
+}
+
+#[derive(Accounts)]
+#[instruction(poll_id: u64, cid: u64)]
+pub struct Vote<'info> {
+    #[account(
+        mut,
+        seeds = [poll_id.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub poll: Account<'info, Poll>, // Poll to be voted in
+
+    #[account(
+        mut,
+        seeds = [poll_id.to_le_bytes().as_ref(), cid.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub candidate: Account<'info, Candidate>, // Candidate to receive the vote
+
+    #[account(
+        init, // Create the voter account if it doesn't exist
+        payer = user,
+        space = ANCHOR_DISCRIMINATOR_SIZE + 25, // Account size
+        seeds = [b"voter", poll_id.to_le_bytes().as_ref(), user.key().as_ref()],
+        bump
+    )]
+    pub voter: Account<'info, Voter>, // Unique per poll and user
+
+    #[account(mut)]
+    pub user: Signer<'info>, // Voter's signer account
 
     pub system_program: Program<'info, System>,
 }
