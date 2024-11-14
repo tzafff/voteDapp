@@ -15,5 +15,5 @@ pub enum ErrorCode {
     #[msg("Poll not currently active")]
     PollNotActive,
     #[msg("Poll does not exist or not found")]
-    PollDoesNotExist
+    PollDoesNotExist,
 }
