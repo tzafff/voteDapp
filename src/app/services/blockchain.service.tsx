@@ -1,5 +1,10 @@
 import { AnchorProvider, BN, Program, Wallet } from '@coral-xyz/anchor'
-import { Connection, PublicKey, SystemProgram } from '@solana/web3.js'
+import {
+  Connection,
+  PublicKey,
+  SystemProgram,
+  TransactionSignature,
+} from '@solana/web3.js'
 import idl from '../../../anchor/target/idl/votee.json'
 import { Votee } from '../../../anchor/target/types/votee'
 
@@ -24,6 +29,17 @@ export const getProvider = (
   )
 
   return new Program<Votee>(idl as any, provider)
+}
+
+export const getCounter = async (program: Program<Votee>): Promise<BN> => {
+  const [counterPDA] = PublicKey.findProgramAddressSync(
+    [Buffer.from('counter')],
+    program.programId
+  )
+
+  const counter = await program.account.counter.fetch(counterPDA)
+
+  return counter.count
 }
 
 export const initialize = async (
@@ -58,7 +74,7 @@ export const createPoll = async (
   description: string,
   start: number,
   end: number
-) => {
+): Promise<TransactionSignature> => {
   const [counterPDA] = PublicKey.findProgramAddressSync(
     [Buffer.from('counter')],
     programId
@@ -71,7 +87,7 @@ export const createPoll = async (
   const startBN = new BN(start)
   const endBN = new BN(end)
 
-  tx = await program.methods
+  return await program.methods
     .createPoll(description, startBN, endBN)
     .accountsPartial({
       user: publicKey,
@@ -80,8 +96,6 @@ export const createPoll = async (
       systemProgram: SystemProgram.programId,
     })
     .rpc()
-
-  console.log('Tx', tx)
 }
 
 export const registerCandidate = async (
@@ -160,6 +174,18 @@ export const vote = async (
     .rpc()
 
   console.log('Tx', tx)
+}
+
+export const fetchAllPolls = async (program: Program<Votee>) => {
+  const polls = await program.account.poll.all()
+
+  return polls.map(({ publicKey, account }) => ({
+    ...account,
+    id: publicKey.toBase58(),
+    start: account.start.toNumber(),
+    end: account.end.toNumber(),
+    candidates: account.candidates.toNumber(),
+  }))
 }
 
 export const fetchAllCandidates = async (

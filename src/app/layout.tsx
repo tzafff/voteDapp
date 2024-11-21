@@ -2,6 +2,8 @@ import './globals.css'
 import AppWalletProvider from './components/AppWalletProvider'
 import { ReactQueryProvider } from './react-query-provider'
 import Header from './components/Header'
+import 'react-toastify/dist/ReactToastify.css'
+import { ToastContainer } from 'react-toastify'
 
 export const metadata = {
   title: 'votee',
@@ -20,6 +22,18 @@ export default function RootLayout({
           <AppWalletProvider>
             <Header />
             <main className="max-w-6xl mx-auto">{children}</main>
+            <ToastContainer
+              position="bottom-center"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
           </AppWalletProvider>
         </ReactQueryProvider>
       </body>
