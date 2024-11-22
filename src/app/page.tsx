@@ -1,31 +1,21 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
 import {
   fetchAllPolls,
-  getProvider,
+  getReadonlyProvider,
   initialize,
   registerCandidate,
   vote,
 } from '../app/services/blockchain.service'
+import Link from 'next/link'
+import { Poll } from './utils/interfaces'
 
-interface Poll {
-  id: string
-  description: string
-  start: number // Unix timestamp
-  end: number // Unix timestamp
-  candidates: number
-}
 
 export default function Page() {
   const [polls, setPolls] = useState<Poll[]>([])
-  const { publicKey, sendTransaction, signTransaction } = useWallet()
 
-  const program = useMemo(
-    () => getProvider(publicKey, signTransaction, sendTransaction),
-    [publicKey, signTransaction, sendTransaction]
-  )
+  const program = useMemo(() => getReadonlyProvider(), [])
 
   useEffect(() => {
     if (!program) return
@@ -63,11 +53,11 @@ export default function Page() {
             </h3>
             <div className="text-sm text-gray-600">
               <p>
-                <span className="font-semibold">Start Date:</span>{' '}
+                <span className="font-semibold">Starts:</span>{' '}
                 {new Date(poll.start).toLocaleString()}
               </p>
               <p>
-                <span className="font-semibold">End Date:</span>{' '}
+                <span className="font-semibold">Ends:</span>{' '}
                 {new Date(poll.end).toLocaleString()}
               </p>
               <p>
@@ -75,12 +65,16 @@ export default function Page() {
                 {poll.candidates}
               </p>
             </div>
-            <button
-              className="bg-black text-white font-bold py-2 px-4 rounded-lg
-              hover:bg-gray-900 transition duration-200 w-full"
-            >
-              View Details
-            </button>
+
+            <div className='w-full'>
+              <Link
+                href={`/polls/${poll.id}`}
+                className="bg-black text-white font-bold py-2 px-4 rounded-lg
+              hover:bg-gray-900 transition duration-200 w-full block text-center"
+              >
+                View Details
+              </Link>
+            </div>
           </div>
         ))}
       </div>
