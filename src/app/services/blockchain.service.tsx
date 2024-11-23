@@ -8,9 +8,12 @@ import {
 import idl from '../../../anchor/target/idl/votee.json'
 import { Votee } from '../../../anchor/target/types/votee'
 import { Candidate, Poll } from '../utils/interfaces'
+import { store } from '../store'
+import { globalActions } from '../store/globalSlices'
 
 const programId = new PublicKey(idl.address)
-let tx: any
+const { setCandidates, setPoll } = globalActions
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'http://127.0.0.1:8899'
 
 export const getProvider = (
   publicKey: PublicKey | null,
@@ -22,7 +25,7 @@ export const getProvider = (
     return null
   }
 
-  const connection = new Connection('https://api.devnet.solana.com')
+  const connection = new Connection(RPC_URL)
   const provider = new AnchorProvider(
     connection,
     { publicKey, signTransaction, sendTransaction } as unknown as Wallet,
@@ -33,10 +36,7 @@ export const getProvider = (
 }
 
 export const getReadonlyProvider = (): Program<Votee> => {
-  const connection = new Connection(
-    'https://api.devnet.solana.com',
-    'processed'
-  )
+  const connection = new Connection(RPC_URL, 'processed')
 
   // Use a dummy wallet for read-only operations
   const dummyWallet = {
@@ -57,20 +57,30 @@ export const getReadonlyProvider = (): Program<Votee> => {
 }
 
 export const getCounter = async (program: Program<Votee>): Promise<BN> => {
-  const [counterPDA] = PublicKey.findProgramAddressSync(
-    [Buffer.from('counter')],
-    program.programId
-  )
+  try {
+    const [counterPDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from('counter')],
+      program.programId
+    )
 
-  const counter = await program.account.counter.fetch(counterPDA)
+    const counter = await program.account.counter.fetch(counterPDA)
 
-  return counter.count
+    if (!counter) {
+      console.warn('No counter found, returning zero')
+      return new BN(0)
+    }
+
+    return counter.count
+  } catch (error) {
+    console.error('Failed to retrieve counter:', error)
+    return new BN(-1)
+  }
 }
 
 export const initialize = async (
   program: Program<Votee>,
   publicKey: PublicKey
-) => {
+): Promise<TransactionSignature> => {
   const [counterPDA] = PublicKey.findProgramAddressSync(
     [Buffer.from('counter')],
     programId
@@ -80,7 +90,7 @@ export const initialize = async (
     programId
   )
 
-  tx = await program.methods
+  return await program.methods
     .initialize()
     .accountsPartial({
       user: publicKey,
@@ -89,7 +99,6 @@ export const initialize = async (
       systemProgram: SystemProgram.programId,
     })
     .rpc()
-  console.log('Tx', tx)
 }
 
 export const createPoll = async (
@@ -128,7 +137,7 @@ export const registerCandidate = async (
   publicKey: PublicKey,
   pollId: number,
   name: string
-) => {
+): Promise<TransactionSignature> => {
   const PID = new BN(pollId)
   const [pollPda] = PublicKey.findProgramAddressSync(
     [PID.toArrayLike(Buffer, 'le', 8)],
@@ -147,7 +156,7 @@ export const registerCandidate = async (
     programId
   )
 
-  tx = await program.methods
+  return await program.methods
     .registerCandidate(PID, name)
     .accountsPartial({
       user: publicKey,
@@ -157,8 +166,6 @@ export const registerCandidate = async (
       systemProgram: SystemProgram.programId,
     })
     .rpc()
-
-  console.log('Tx', tx)
 }
 
 export const vote = async (
@@ -166,7 +173,7 @@ export const vote = async (
   publicKey: PublicKey,
   pollId: number,
   candidateId: number
-) => {
+): Promise<TransactionSignature> => {
   const PID = new BN(pollId)
   const CID = new BN(candidateId)
 
@@ -187,7 +194,7 @@ export const vote = async (
     programId
   )
 
-  tx = await program.methods
+  return await program.methods
     .vote(PID, CID)
     .accountsPartial({
       user: publicKey,
@@ -197,8 +204,6 @@ export const vote = async (
       systemProgram: SystemProgram.programId,
     })
     .rpc()
-
-  console.log('Tx', tx)
 }
 
 export const fetchAllPolls = async (
@@ -219,38 +224,22 @@ export const fetchAllPolls = async (
 export const fetchPollDetails = async (
   program: Program<Votee>,
   pollAddress: string
-): Promise<Poll | null> => {
-  try {
-    const pollAccount = await program.account.poll.fetch(pollAddress)
-
-    if (!pollAccount) {
-      console.error(`Poll account not found at address: ${pollAddress}`)
-      return null
-    }
-
-    return {
-      ...pollAccount,
-      id: pollAddress,
-      poll_id: pollAccount.id.toNumber(),
-      start: pollAccount.start.toNumber(),
-      end: pollAccount.end.toNumber(),
-      candidates: pollAccount.candidates.toNumber(),
-    }
-  } catch (error) {
-    console.error(`Error fetching single poll: ${error}`)
-    throw error
-  }
+): Promise<Poll> => {
+  const poll = await program.account.poll.fetch(pollAddress)
+  store.dispatch(setPoll(resturcturedPoll(poll, pollAddress)))
+  return resturcturedPoll(poll, pollAddress)
 }
 
-// export const fetchAllCandidates = async (program: Program<Votee>) => {
-//   const candidates = await program.account.candidate.all()
-
-//   return candidates.map(({ publicKey, account }) => ({
-//     ...account,
-//     id: publicKey.toBase58(),
-//     votes: account.votes.toNumber(),
-//   }))
-// }
+const resturcturedPoll = (poll: any, pollAddress: string): Poll => {
+  return {
+    ...poll,
+    id: pollAddress,
+    poll_id: poll.id.toNumber(),
+    start: poll.start.toNumber(),
+    end: poll.end.toNumber(),
+    candidates: poll.candidates.toNumber(),
+  }
+}
 
 export const fetchAllCandidates = async (
   program: Program<Votee>,
@@ -280,13 +269,21 @@ export const fetchAllCandidates = async (
         programId
       )
       const candidate = await program.account.candidate.fetch(candidatePda)
-      candidateAccounts.push(candidate as unknown as Candidate)
+      candidateAccounts.push(restructureCandidate(candidate))
     }
   }
-
+  store.dispatch(setCandidates(candidateAccounts))
   return candidateAccounts
 }
 
+const restructureCandidate = (candidate: any): Candidate => {
+  return {
+    ...candidate,
+    cid: candidate.cid.toNumber(),
+    pollId: candidate.pollId.toNumber(),
+    votes: candidate.votes.toNumber(),
+  } as Candidate
+}
 export const fetchAllVoters = async (
   program: Program<Votee>,
   pollId: number

@@ -12,3 +12,14 @@ export interface Poll {
   end: number // Unix timestamp
   candidates: number
 }
+
+export interface GlobalState {
+  poll: Poll | null
+  candidates: Candidate[]
+  voters: any[]
+  regModal: string
+}
+
+export interface RootState {
+  globalStates: GlobalState
+}
