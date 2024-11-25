@@ -1,83 +1,35 @@
 'use client'
 
 import { NextPage } from 'next'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'react-toastify'
-import { BN } from '@coral-xyz/anchor'
-import {
-  createPoll,
-  getCounter,
-  getProvider,
-} from '../services/blockchain.service'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useState } from 'react'
 
 const Page: NextPage = () => {
-  const { publicKey, sendTransaction, signTransaction } = useWallet()
-  const [nextCount, setNextCount] = useState<BN>(new BN(0))
-  const [isInitialized, setIsInitialized] = useState(false)
-
-  const program = useMemo(
-    () => getProvider(publicKey, signTransaction, sendTransaction),
-    [publicKey, signTransaction, sendTransaction]
-  )
-
   const [formData, setFormData] = useState({
     description: '',
     startDate: '',
     endDate: '',
   })
 
-  useEffect(() => {
-    const fetchCounter = async () => {
-      if (!program) return
-      const count = await getCounter(program)
-      setNextCount(count.add(new BN(1)))
-      setIsInitialized(count.gte(new BN(0)))
-    }
-
-    fetchCounter()
-  }, [program, formData])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!program || !isInitialized) return
-
     const { description, startDate, endDate } = formData
 
     const startTimestamp = new Date(startDate).getTime() / 1000
     const endTimestamp = new Date(endDate).getTime() / 1000
 
-    await toast.promise(
-      new Promise<void>(async (resolve, reject) => {
-        try {
-          const tx = await createPoll(
-            program!,
-            publicKey!,
-            nextCount,
-            description,
-            startTimestamp,
-            endTimestamp
-          )
+    console.log('Poll Details:', {
+      description,
+      startTimestamp,
+      endTimestamp,
+    })
 
-          setFormData({
-            description: '',
-            startDate: '',
-            endDate: '',
-          })
+    setFormData({
+      description: '',
+      startDate: '',
+      endDate: '',
+    })
 
-          console.log(tx)
-          resolve(tx as any)
-        } catch (error) {
-          console.error('Transaction failed:', error)
-          reject(error)
-        }
-      }),
-      {
-        pending: 'Approve transaction...',
-        success: 'Transaction successful 👌',
-        error: 'Encountered error 🤯',
-      }
-    )
+    alert('Poll created successfully!')
   }
 
   return (
@@ -160,9 +112,8 @@ const Page: NextPage = () => {
           <div className="flex justify-center w-full">
             <button
               type="submit"
-              disabled={!program || !isInitialized}
               className="bg-black text-white font-bold py-3 px-6 rounded-lg
-              hover:bg-gray-900 transition duration-200 w-full disabled:bg-opacity-70"
+              hover:bg-gray-900 transition duration-200 w-full"
             >
               Create Poll
             </button>

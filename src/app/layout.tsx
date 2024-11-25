@@ -1,13 +1,10 @@
 'use client'
 
 import './globals.css'
-import AppWalletProvider from './components/AppWalletProvider'
 import { ReactQueryProvider } from './react-query-provider'
 import Header from './components/Header'
 import 'react-toastify/dist/ReactToastify.css'
 import { ToastContainer } from 'react-toastify'
-import { Provider } from 'react-redux'
-import { store } from './store'
 
 const metadata = {
   title: 'votee',
@@ -23,24 +20,20 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ReactQueryProvider>
-          <Provider store={store}>
-            <AppWalletProvider>
-              <Header />
-              <main className="max-w-6xl mx-auto">{children}</main>
-              <ToastContainer
-                position="bottom-center"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="dark"
-              />
-            </AppWalletProvider>
-          </Provider>
+          <Header />
+          <main className="max-w-6xl mx-auto">{children}</main>
+          <ToastContainer
+            position="bottom-center"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="dark"
+          />
         </ReactQueryProvider>
       </body>
     </html>

@@ -1,6 +1,3 @@
-'use client'
-
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -25,9 +22,17 @@ const Header = () => {
         </div>
 
         {isMounted && (
-          <WalletMultiButton
-            style={{ backgroundColor: '#F97316', color: 'white' }}
-          />
+          <button
+            style={{
+              backgroundColor: '#F97316',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+            }}
+          >
+            Connect Wallet
+          </button>
         )}
       </nav>
     </header>

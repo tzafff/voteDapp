@@ -1,13 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Candidate } from '../utils/interfaces'
-import { useWallet } from '@solana/wallet-adapter-react'
-import {
-  fetchAllCandidates,
-  getProvider,
-  hasUserVoted,
-  vote,
-} from '../services/blockchain.service'
+import React, { useState } from 'react'
 import { toast } from 'react-toastify'
+import { Candidate } from '../utils/interfaces'
 
 interface Props {
   candidates: Candidate[]
@@ -15,50 +8,31 @@ interface Props {
   pollId: number
 }
 
-const CandidateList = ({ candidates, pollAddress, pollId }: Props) => {
+const CandidateList = ({ candidates }: Props) => {
   const [voted, setVoted] = useState<boolean>(false)
-  const { publicKey, sendTransaction, signTransaction } = useWallet()
-  const program = useMemo(
-    () => getProvider(publicKey, signTransaction, sendTransaction),
-    [publicKey, signTransaction, sendTransaction]
-  )
-  const fetchVotingStatus = async () => {
-    const status = await hasUserVoted(program!, publicKey!, pollId)
-    setVoted(status)
-  }
-
-  useEffect(() => {
-    if (!program || !publicKey) return
-
-    fetchVotingStatus()
-  }, [program, publicKey, candidates])
 
   const handleVote = async (candidate: Candidate) => {
-    if (!program || !publicKey || voted) return
+    if (voted) return
 
     await toast.promise(
-      new Promise<void>(async (resolve, reject) => {
+      new Promise<void>((resolve, reject) => {
         try {
-          const tx = await vote(
-            program!,
-            publicKey!,
-            candidate.pollId,
-            candidate.cid
+          console.log(
+            `Voting for candidate: ${candidate.name} (ID: ${candidate.cid})`
           )
-
-          await fetchAllCandidates(program, pollAddress)
-          await fetchVotingStatus()
-
-          console.log(tx)
-          resolve(tx as any)
+          // Simulate voting success
+          setTimeout(() => {
+            setVoted(true)
+            resolve()
+          }, 1000)
         } catch (error) {
-          console.error('Transaction failed:', error)
+          console.error('Voting failed:', error)
           reject(error)
         }
       }),
       {
-        pending: 'Approve transaction...',
-        success: 'Transaction successful 👌',
+        pending: 'Approving vote...',
+        success: 'Vote successful 👌',
         error: 'Encountered error 🤯',
       }
     )
@@ -79,7 +53,7 @@ const CandidateList = ({ candidates, pollAddress, pollId }: Props) => {
                 className={`px-2 py-1 bg-${voted ? 'red' : 'green'}-100 text-${
                   voted ? 'red' : 'green'
                 }-700 ${!voted && 'hover:bg-green-200'} rounded`}
-                disabled={voted || !publicKey}
+                disabled={voted}
               >
                 {voted ? 'Voted' : 'Vote'}{' '}
                 <span className="font-semibold">{candidate.votes}</span>

@@ -1,65 +1,34 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
-import {
-  fetchAllPolls,
-  getCounter,
-  getProvider,
-  getReadonlyProvider,
-  initialize,
-} from '../app/services/blockchain.service'
+import React from 'react'
 import Link from 'next/link'
-import { Poll } from './utils/interfaces'
-import { BN } from '@coral-xyz/anchor'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { toast } from 'react-toastify'
 
 export default function Page() {
-  const [polls, setPolls] = useState<Poll[]>([])
-  const { publicKey, signTransaction, sendTransaction } = useWallet()
-  const [isInitialized, setIsInitialized] = useState<boolean>(false)
-  const programReadOnly = useMemo(() => getReadonlyProvider(), [])
-
-  const program = useMemo(
-    () => getProvider(publicKey, signTransaction, sendTransaction),
-    [publicKey, signTransaction, sendTransaction]
-  )
-
-  const fetchData = async () => {
-    fetchAllPolls(programReadOnly).then((data) => setPolls(data as any))
-    const count = await getCounter(programReadOnly)
-    setIsInitialized(count.gte(new BN(0)))
-  }
-
-  useEffect(() => {
-    if (!programReadOnly) return
-    fetchData()
-  }, [programReadOnly])
-
-  const handleInit = async () => {
-    // alert(isInitialized && !!publicKey)
-    if (isInitialized && !!publicKey) return
-
-    await toast.promise(
-      new Promise<void>(async (resolve, reject) => {
-        try {
-          const tx = await initialize(program!, publicKey!)
-          console.log(tx)
-
-          await fetchData()
-          resolve(tx as any)
-        } catch (error) {
-          console.error('Transaction failed:', error)
-          reject(error)
-        }
-      }),
-      {
-        pending: 'Approve transaction...',
-        success: 'Transaction successful 👌',
-        error: 'Encountered error 🤯',
-      }
-    )
-  }
+  const isInitialized = true // Assume the system is initialized
+  const publicKey = 'DummyPublicKey' // Placeholder public key
+  const polls = [
+    {
+      publicKey: 'DummyPollKey1',
+      description: 'Favorite Thing about Christmas',
+      start: new Date('2024-11-24T01:02:00').getTime(),
+      end: new Date('2024-11-28T02:03:00').getTime(),
+      candidates: 2,
+    },
+    {
+      publicKey: 'DummyPollKey2',
+      description: 'Best Sport in the World',
+      start: new Date('2024-12-01T00:00:00').getTime(),
+      end: new Date('2024-12-05T23:59:59').getTime(),
+      candidates: 5,
+    },
+    {
+      publicKey: 'DummyPollKey2',
+      description: 'Safest Country in the world',
+      start: new Date('2024-12-22T00:00:00').getTime(),
+      end: new Date('2024-12-25T23:59:59').getTime(),
+      candidates: 3,
+    },
+  ] // Dummy list of polls
 
   return (
     <div className="flex flex-col items-center py-10">
@@ -80,7 +49,7 @@ export default function Page() {
 
       {!isInitialized && publicKey && (
         <button
-          onClick={handleInit}
+          onClick={() => alert('Dummy Initialize')}
           className="bg-gray-800 text-white rounded-full
           px-6 py-2 text-lg font-bold mb-8"
         >
