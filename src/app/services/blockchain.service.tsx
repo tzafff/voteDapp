@@ -304,15 +304,31 @@ const serializedCandidates = (candidates: any[]): Candidate[] =>
     name: c.account.name,
   }))
 
-export const fetchAllVoters = async (
+export const hasUserVoted = async (
   program: Program<Votee>,
+  publicKey: PublicKey,
   pollId: number
-) => {
+): Promise<boolean> => {
   const PID = new BN(pollId)
-  const voterAccounts: any = []
 
-  // Logic to fetch all voters for a given pollId
-  // Note: Requires structure in your program for voters.
+  const [voterPda] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('voter'),
+      PID.toArrayLike(Buffer, 'le', 8),
+      publicKey.toBuffer(),
+    ],
+    programId
+  )
 
-  return voterAccounts
+  try {
+    const voterAccount = await program.account.voter.fetch(voterPda)
+    if (!voterAccount || !voterAccount.hasVoted) {
+      return false // Default value if no account exists or hasn't voted
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error fetching voter account:', error)
+    return false
+  }
 }

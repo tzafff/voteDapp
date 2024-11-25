@@ -18,7 +18,6 @@ import CandidateList from '@/app/components/CandidateList'
 export default function PollDetails() {
   const { pollId } = useParams()
   const { publicKey } = useWallet()
-  
 
   const program = useMemo(() => getReadonlyProvider(), [])
 
@@ -95,7 +94,13 @@ export default function PollDetails() {
           </button>
         )}
 
-        {candidates.length > 0 && <CandidateList candidates={candidates} pollAddress={poll.publicKey} />}
+        {candidates.length > 0 && (
+          <CandidateList
+            candidates={candidates}
+            pollAddress={poll.publicKey}
+            pollId={poll.id}
+          />
+        )}
       </div>
 
       {pollId && <RegCandidate pollId={poll.id} pollAddress={poll.publicKey} />}

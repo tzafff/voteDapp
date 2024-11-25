@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Candidate } from '../utils/interfaces'
 import { useWallet } from '@solana/wallet-adapter-react'
 import {
   fetchAllCandidates,
   getProvider,
+  hasUserVoted,
   vote,
 } from '../services/blockchain.service'
 import { toast } from 'react-toastify'
@@ -11,17 +12,29 @@ import { toast } from 'react-toastify'
 interface Props {
   candidates: Candidate[]
   pollAddress: string
+  pollId: number
 }
 
-const CandidateList = ({ candidates, pollAddress }: Props) => {
+const CandidateList = ({ candidates, pollAddress, pollId }: Props) => {
+  const [voted, setVoted] = useState<boolean>(false)
   const { publicKey, sendTransaction, signTransaction } = useWallet()
   const program = useMemo(
     () => getProvider(publicKey, signTransaction, sendTransaction),
     [publicKey, signTransaction, sendTransaction]
   )
+  const fetchVotingStatus = async () => {
+    const status = await hasUserVoted(program!, publicKey!, pollId)
+    setVoted(status)
+  }
+
+  useEffect(() => {
+    if (!program || !publicKey) return
+
+    fetchVotingStatus()
+  }, [program, publicKey, candidates])
 
   const handleVote = async (candidate: Candidate) => {
-    if (!program || !publicKey) return
+    if (!program || !publicKey || voted) return
 
     await toast.promise(
       new Promise<void>(async (resolve, reject) => {
@@ -34,6 +47,7 @@ const CandidateList = ({ candidates, pollAddress }: Props) => {
           )
 
           await fetchAllCandidates(program, pollAddress)
+          await fetchVotingStatus()
 
           console.log(tx)
           resolve(tx as any)
@@ -62,9 +76,13 @@ const CandidateList = ({ candidates, pollAddress }: Props) => {
             <span className="text-gray-600 text-sm flex items-center space-x-2">
               <button
                 onClick={() => handleVote(candidate)}
-                className="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                className={`px-2 py-1 bg-${voted ? 'red' : 'green'}-100 text-${
+                  voted ? 'red' : 'green'
+                }-700 ${!voted && 'hover:bg-green-200'} rounded`}
+                disabled={voted || !publicKey}
               >
-                Vote <span className="font-semibold">{candidate.votes}</span>
+                {voted ? 'Voted' : 'Vote'}{' '}
+                <span className="font-semibold">{candidate.votes}</span>
               </button>
             </span>
           </div>
