@@ -1,12 +1,15 @@
 export interface Candidate {
-  cid: string
+  publicKey: string
+  cid: number
+  pollId: number
   name: string
   votes: number
+  hasRegistered: boolean
 }
 
 export interface Poll {
-  id: string
-  poll_id: number
+  publicKey: string
+  id: number
   description: string
   start: number // Unix timestamp
   end: number // Unix timestamp

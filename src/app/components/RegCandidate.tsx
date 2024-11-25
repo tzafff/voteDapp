@@ -3,11 +3,22 @@ import { FaTimes } from 'react-icons/fa'
 import { globalActions } from '../store/globalSlices'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '../utils/interfaces'
-import { fetchAllCandidates, fetchPollDetails, getProvider, registerCandidate } from '../services/blockchain.service'
+import {
+  fetchAllCandidates,
+  fetchPollDetails,
+  getProvider,
+  registerCandidate,
+} from '../services/blockchain.service'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { toast } from 'react-toastify'
 
-const RegCandidate = ({ pollId }: { pollId: number }) => {
+const RegCandidate = ({
+  pollId,
+  pollAddress,
+}: {
+  pollId: number
+  pollAddress: string
+}) => {
   const { publicKey, sendTransaction, signTransaction } = useWallet()
   const [candidateName, setCandidateName] = useState<string>('')
 
@@ -37,8 +48,8 @@ const RegCandidate = ({ pollId }: { pollId: number }) => {
           setCandidateName('')
           dispatch(setRegModal('scale-0'))
 
-        //   await fetchPollDetails(program, pollId as string)
-        //   await fetchAllCandidates(program, pollId as string)
+          await fetchPollDetails(program, pollAddress)
+          await fetchAllCandidates(program, pollAddress)
 
           console.log(tx)
           resolve(tx as any)

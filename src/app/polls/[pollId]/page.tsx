@@ -13,15 +13,17 @@ import { FaRegEdit } from 'react-icons/fa'
 import { useDispatch, useSelector } from 'react-redux'
 import { globalActions } from '@/app/store/globalSlices'
 import { useWallet } from '@solana/wallet-adapter-react'
+import CandidateList from '@/app/components/CandidateList'
 
 export default function PollDetails() {
   const { pollId } = useParams()
   const { publicKey } = useWallet()
+  
 
   const program = useMemo(() => getReadonlyProvider(), [])
 
   const dispatch = useDispatch()
-  const { setRegModal } = globalActions
+  const { setRegModal, setCandidates, setPoll } = globalActions
   const { candidates, poll } = useSelector(
     (states: RootState) => states.globalStates
   )
@@ -36,7 +38,7 @@ export default function PollDetails() {
     }
 
     fetchDetails()
-  }, [program, pollId])
+  }, [program, pollId, setPoll, setCandidates, dispatch])
 
   if (!poll) {
     return (
@@ -93,27 +95,10 @@ export default function PollDetails() {
           </button>
         )}
 
-        <div className="bg-white border border-gray-300 rounded-xl shadow-lg p-6 w-4/5 md:w-3/5 space-y-4 text-center">
-          <div className="space-y-2">
-            {candidates.map((candidate) => (
-              <div
-                key={candidate.cid}
-                className="flex justify-between items-center border-b border-gray-300 last:border-none pb-4 last:pb-0"
-              >
-                <span className="text-gray-800 font-medium">
-                  {candidate.name}
-                </span>
-                <span className="text-gray-600 text-sm">
-                  Votes:{' '}
-                  <span className="font-semibold">{candidate.votes}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {candidates.length > 0 && <CandidateList candidates={candidates} />}
       </div>
 
-      <RegCandidate pollId={poll.poll_id} />
+      {pollId && <RegCandidate pollId={poll.id} pollAddress={poll.publicKey} />}
     </>
   )
 }

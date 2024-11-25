@@ -115,7 +115,7 @@ export default function Page() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-4/5">
         {polls.map((poll) => (
           <div
-            key={poll.id}
+            key={poll.publicKey}
             className="bg-white border border-gray-300 rounded-xl shadow-lg p-6 space-y-4"
           >
             <h3 className="text-lg font-semibold text-gray-800">
@@ -138,7 +138,7 @@ export default function Page() {
 
             <div className="w-full">
               <Link
-                href={`/polls/${poll.id}`}
+                href={`/polls/${poll.publicKey}`}
                 className="bg-black text-white font-bold py-2 px-4 rounded-lg
               hover:bg-gray-900 transition duration-200 w-full block text-center"
               >

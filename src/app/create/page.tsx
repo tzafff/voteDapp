@@ -36,7 +36,7 @@ const Page: NextPage = () => {
     }
 
     fetchCounter()
-  }, [program])
+  }, [program, formData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
