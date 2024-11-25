@@ -7,7 +7,6 @@ import {
   getProvider,
   getReadonlyProvider,
   initialize,
-  vote,
 } from '../app/services/blockchain.service'
 import Link from 'next/link'
 import { Poll } from './utils/interfaces'
@@ -63,20 +62,6 @@ export default function Page() {
   }
 
   return (
-    // <div className="flex flex-col justify-center items-center space-y-4">
-    //   <button onClick={() => initialize(program!, publicKey!)}>
-    //     Initialize
-    //   </button>
-    //   <button
-    //     onClick={() =>
-    //       registerCandidate(program!, publicKey!, 2, 'Candidate 2')
-    //     }
-    //   >
-    //     Register Candidate
-    //   </button>
-    //   <button onClick={() => vote(program!, publicKey!, 2, 1)}>Vote</button>
-    // </div>
-
     <div className="flex flex-col items-center py-10">
       {isInitialized && polls.length > 0 && (
         <h2 className="bg-gray-800 text-white rounded-full px-6 py-2 text-lg font-bold mb-8">
@@ -119,7 +104,9 @@ export default function Page() {
             className="bg-white border border-gray-300 rounded-xl shadow-lg p-6 space-y-4"
           >
             <h3 className="text-lg font-semibold text-gray-800">
-              {poll.description}
+              {poll.description.length > 20
+                ? poll.description.slice(0, 25) + '...'
+                : poll.description}
             </h3>
             <div className="text-sm text-gray-600">
               <p>
@@ -142,7 +129,7 @@ export default function Page() {
                 className="bg-black text-white font-bold py-2 px-4 rounded-lg
               hover:bg-gray-900 transition duration-200 w-full block text-center"
               >
-                View Details
+                View Poll
               </Link>
             </div>
           </div>
