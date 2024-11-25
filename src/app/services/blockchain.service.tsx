@@ -256,8 +256,8 @@ export const fetchPollDetails = async (
     ...poll,
     publicKey: pollAddress,
     id: poll.id.toNumber(),
-    start: poll.start.toNumber(),
-    end: poll.end.toNumber(),
+    start: poll.start.toNumber() * 1000,
+    end: poll.end.toNumber() * 1000,
     candidates: poll.candidates.toNumber(),
   }
 
@@ -270,8 +270,8 @@ const serializedPoll = (polls: any[]): Poll[] =>
     ...c.account,
     publicKey: c.publicKey.toBase58(),
     id: c.account.id.toNumber(),
-    start: c.account.start.toNumber(),
-    end: c.account.end.toNumber(),
+    start: c.account.start.toNumber() * 1000,
+    end: c.account.end.toNumber() * 1000,
     candidates: c.account.candidates.toNumber(),
   }))
 

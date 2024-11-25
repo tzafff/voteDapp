@@ -95,7 +95,7 @@ export default function PollDetails() {
           </button>
         )}
 
-        {candidates.length > 0 && <CandidateList candidates={candidates} />}
+        {candidates.length > 0 && <CandidateList candidates={candidates} pollAddress={poll.publicKey} />}
       </div>
 
       {pollId && <RegCandidate pollId={poll.id} pollAddress={poll.publicKey} />}

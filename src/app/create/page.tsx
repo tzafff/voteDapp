@@ -44,8 +44,8 @@ const Page: NextPage = () => {
 
     const { description, startDate, endDate } = formData
 
-    const startTimestamp = new Date(startDate).getTime()
-    const endTimestamp = new Date(endDate).getTime()
+    const startTimestamp = new Date(startDate).getTime() / 1000
+    const endTimestamp = new Date(endDate).getTime() / 1000
 
     await toast.promise(
       new Promise<void>(async (resolve, reject) => {
