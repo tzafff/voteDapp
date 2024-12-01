@@ -3,6 +3,7 @@ import {Votee} from "../../../anchor/target/types/votee";
 import {AnchorProvider, BN, Program, Wallet} from "@coral-xyz/anchor";
 import idl from '../../../anchor/target/idl/votee.json'
 import {globalActions} from "../../../store/globalSlices";
+import {Poll} from "@/app/utils/interfaces";
 
 let tx
 const programId = new PublicKey(idl.address)
@@ -141,3 +142,20 @@ export const createPoll = async (
 
     return tx
 }
+
+export const fetchAllPolls = async (
+    program: Program<Votee>,
+) : Promise<Poll[]> => {
+    const polls = await program.account.poll.all()
+    return serializedPoll(polls);
+}
+
+const serializedPoll = (polls: any[]): Poll[] =>
+    polls.map((c: any) => ({
+        ...c.account,
+        publicKey: c.publicKey.toBase58(),
+        id: c.account.id.toNumber(),
+        start: c.account.start.toNumber() * 1000,
+        end: c.account.end.toNumber() * 1000,
+        candidates: c.account.candidates.toNumber(),
+    }))

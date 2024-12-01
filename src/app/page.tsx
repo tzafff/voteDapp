@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {useWallet} from "@solana/wallet-adapter-react";
 import {Poll} from "@/app/utils/interfaces";
 import {toast} from "react-toastify";
-import {getCounter, getProvider, getReadonlyProvider, initialize} from "@/app/service/blockchain";
+import {fetchAllPolls, getCounter, getProvider, getReadonlyProvider, initialize} from "@/app/service/blockchain";
 import {BN} from "@coral-xyz/anchor";
 
 export default function Page() {
@@ -21,7 +21,7 @@ export default function Page() {
     )
 
     const fetchData = async () => {
-        // fetchAllPolls(programReadOnly).then((data) => setPolls(data as any))
+        fetchAllPolls(programReadOnly).then((data) => setPolls(data as any))
         const count = await getCounter(programReadOnly)
         setIsInitialized(count.gte(new BN(0)))
     }
