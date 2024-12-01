@@ -102,3 +102,42 @@ export const initialize = async (
 
     return tx
 }
+
+export const createPoll = async (
+    program: Program<Votee>,
+    publicKey: PublicKey,
+    nextCount: BN,
+    description: string,
+    start: number,
+    end: number
+): Promise<TransactionSignature> => {
+    const [counterPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from('counter')],
+        programId
+    )
+    const [pollPDA] = PublicKey.findProgramAddressSync(
+        [nextCount.toArrayLike(Buffer, 'le', 8)],
+        programId
+    )
+
+    const startBN = new BN(start)
+    const endBN = new BN(end)
+
+    tx = await program.methods
+        .createPoll(description, startBN, endBN)
+        .accountsPartial({
+            user: publicKey,
+            counter: counterPDA,
+            poll: pollPDA,
+            systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+
+    const connection = new Connection(
+        program.provider.connection.rpcEndpoint,
+        'confirmed'
+    )
+    await connection.confirmTransaction(tx, 'finalized')
+
+    return tx
+}

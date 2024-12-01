@@ -1,17 +1,46 @@
 'use client'
 
 import { NextPage } from 'next'
-import { useState } from 'react'
+import {useEffect, useMemo, useState} from 'react'
+import {toast} from "react-toastify";
+import {createPoll, getCounter, getProvider, initialize} from "@/app/service/blockchain";
+import {useWallet} from "@solana/wallet-adapter-react";
+import {BN} from "@coral-xyz/anchor";
 
 const Page: NextPage = () => {
+
+  const [nextCount, setNextCount] = useState<BN>(new BN(0))
+  const [isInitialized, setIsInitialized] = useState<boolean>(false)
+  const [submitting, setSubmitting] = useState<boolean>(false)
+
+  const {publicKey, signTransaction, sendTransaction} = useWallet()
+
+
+  const program = useMemo(
+      () => getProvider(publicKey, signTransaction, sendTransaction),
+      [publicKey, signTransaction, sendTransaction]
+  )
+
   const [formData, setFormData] = useState({
     description: '',
     startDate: '',
     endDate: '',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchCounter = async () => {
+    if(!program) return
+    const count = await getCounter(program)
+    setNextCount(count.add(new BN(1)))
+    setIsInitialized(count.gte(new BN(0)))
+  }
+
+  useEffect(() => {
+    fetchCounter()
+  }, [program, submitting]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if(!program || !isInitialized) return
     const { description, startDate, endDate } = formData
 
     const startTimestamp = new Date(startDate).getTime() / 1000
@@ -23,11 +52,39 @@ const Page: NextPage = () => {
       endTimestamp,
     })
 
-    setFormData({
-      description: '',
-      startDate: '',
-      endDate: '',
-    })
+    await toast.promise(
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            setSubmitting(true)
+            const tx = await createPoll(
+                program!,
+                publicKey!,
+                nextCount,
+                description,
+                startTimestamp,
+                endTimestamp
+            )
+
+            setFormData({
+              description: '',
+              startDate: '',
+              endDate: '',
+            })
+
+            console.log(tx)
+
+            resolve(tx as any)
+          } catch (error) {
+            console.error('Transaction failed:', error)
+            reject(error)
+          }
+        }),
+        {
+          pending: 'Approve transaction...',
+          success: 'Transaction successful 👌',
+          error: 'Encountered error 🤯',
+        }
+    )
 
     alert('Poll created successfully!')
   }
