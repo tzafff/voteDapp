@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import {WalletMultiButton} from "@solana/wallet-adapter-react-ui";
 
 const Header = () => {
   const [isMounted, setIsMounted] = useState(false)
@@ -22,17 +23,7 @@ const Header = () => {
         </div>
 
         {isMounted && (
-          <button
-            style={{
-              backgroundColor: '#F97316',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-            }}
-          >
-            Connect Wallet
-          </button>
+          <WalletMultiButton style={{backgroundColor: '#F97316', color: 'white'}}/>
         )}
       </nav>
     </header>

@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-votee = "FQSjkWA6Sb6PcEJm693XsX9GETY7zhArPcPkkuLwdGws"
+votee = "5fuh7wWpVVDHUkoy4nrjagDbCNAwGq9BWwqHEWV8xH16"
 
 [programs.devnet]
 votee = "FQSjkWA6Sb6PcEJm693XsX9GETY7zhArPcPkkuLwdGws"
