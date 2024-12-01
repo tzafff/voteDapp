@@ -1,27 +1,38 @@
 'use client'
 
-import React from 'react'
+import React, {useEffect, useMemo} from 'react'
 import { FaRegEdit } from 'react-icons/fa'
 import CandidateList from '@/app/components/CandidateList'
 import RegCandidate from '@/app/components/RegCandidate'
-import { Candidate, Poll } from '@/app/utils/interfaces'
-import {useDispatch} from "react-redux";
+import {Candidate, Poll, RootState} from '@/app/utils/interfaces'
+import {useDispatch, useSelector} from "react-redux";
 import {globalActions} from "../../../../store/globalSlices";
+import {useParams} from "next/navigation";
+import {useWallet} from "@solana/wallet-adapter-react";
+import {fetchPollDetails, getReadonlyProvider} from "@/app/service/blockchain";
 
 export default function PollDetails() {
 
   const dispatch = useDispatch()
   const { setRegModal } = globalActions
+  const { publicKey } = useWallet()
+  const { pollId } = useParams();
 
-  const publicKey = 'DummyPublicKey' // Placeholder for public key
-  const poll: Poll = {
-    id: 1,
-    publicKey: 'DummyPollKey',
-    description: 'Favorite Thing about Christmas',
-    start: new Date('2024-11-24T01:02:00').getTime(),
-    end: new Date('2024-11-28T02:03:00').getTime(),
-    candidates: 2,
-  } // Dummy poll data
+  const { poll } = useSelector((states: RootState) => states.globalStates)
+  const program = useMemo(() => getReadonlyProvider(), [])
+
+
+  useEffect(() => {
+    if(!program || !pollId) return
+
+    const fetchDetails = async () => {
+      await fetchPollDetails(program, pollId as string);
+    }
+
+    fetchDetails()
+  }, [program, pollId]);
+
+
   const candidates: Candidate[] = [
     {
       publicKey: 'dummy_public_key_1',

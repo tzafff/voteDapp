@@ -13,8 +13,8 @@ export default function Page() {
     const [polls, setPolls] = useState<Poll[]>([])
     const {publicKey, signTransaction, sendTransaction} = useWallet()
     const [isInitialized, setIsInitialized] = useState<boolean>(false)
-    const programReadOnly = useMemo(() => getReadonlyProvider(), [])
 
+    const programReadOnly = useMemo(() => getReadonlyProvider(), [])
     const program = useMemo(
         () => getProvider(publicKey, signTransaction, sendTransaction),
         [publicKey, signTransaction, sendTransaction]
