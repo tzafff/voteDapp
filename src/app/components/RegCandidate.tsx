@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import { FaTimes } from 'react-icons/fa'
 import { toast } from 'react-toastify'
+import {useDispatch, useSelector} from "react-redux";
+import {globalActions} from "../../../store/globalSlices";
+import {RootState} from "@/app/utils/interfaces";
 
 const RegCandidate = ({
   pollId,
@@ -10,7 +13,9 @@ const RegCandidate = ({
   pollAddress: string
 }) => {
   const [candidateName, setCandidateName] = useState<string>('')
-  const [modalVisible, setModalVisible] = useState<boolean>(true)
+  const dispatch = useDispatch()
+  const { setRegModal } = globalActions
+  const { regModal } = useSelector((states: RootState) => states.globalStates)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +30,6 @@ const RegCandidate = ({
           // Simulate successful registration
           setTimeout(() => {
             setCandidateName('')
-            setModalVisible(false)
             resolve()
           }, 1000)
         } catch (error) {
@@ -41,12 +45,12 @@ const RegCandidate = ({
     )
   }
 
-  if (!modalVisible) return null
+
 
   return (
     <div
       className={`fixed top-0 left-0 w-screen h-screen flex items-center justify-center
-      bg-black bg-opacity-50 transform z-[3000] transition-transform duration-300`}
+      bg-black bg-opacity-50 transform z-[3000] transition-transform ${regModal} duration-300`}
     >
       <div className="bg-white shadow-lg shadow-slate-900 rounded-xl w-11/12 md:w-2/5 h-7/12 p-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -57,7 +61,7 @@ const RegCandidate = ({
             <button
               type="button"
               className="border-0 bg-transparent focus:outline-none"
-              onClick={() => setModalVisible(false)}
+              onClick={() => dispatch((setRegModal('scale-0')))}
             >
               <FaTimes className="text-gray-400" />
             </button>

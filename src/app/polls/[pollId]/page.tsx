@@ -5,8 +5,14 @@ import { FaRegEdit } from 'react-icons/fa'
 import CandidateList from '@/app/components/CandidateList'
 import RegCandidate from '@/app/components/RegCandidate'
 import { Candidate, Poll } from '@/app/utils/interfaces'
+import {useDispatch} from "react-redux";
+import {globalActions} from "../../../../store/globalSlices";
 
 export default function PollDetails() {
+
+  const dispatch = useDispatch()
+  const { setRegModal } = globalActions
+
   const publicKey = 'DummyPublicKey' // Placeholder for public key
   const poll: Poll = {
     id: 1,
@@ -34,10 +40,6 @@ export default function PollDetails() {
       hasRegistered: false,
     },
   ]
-
-  const handleSetRegModal = () => {
-    alert('Dummy registration modal triggered')
-  }
 
   if (!poll) {
     return (
@@ -80,7 +82,7 @@ export default function PollDetails() {
           <button
             className="flex justify-center items-center space-x-2 bg-gray-800 text-white rounded-full
           px-6 py-2 text-lg font-bold"
-            onClick={handleSetRegModal}
+            onClick={() => dispatch(setRegModal('scale-100'))}
           >
             <span>Candidates</span>
             <FaRegEdit />
