@@ -3,7 +3,7 @@ import {Votee} from "../../../anchor/target/types/votee";
 import {AnchorProvider, BN, Program, Wallet} from "@coral-xyz/anchor";
 import idl from '../../../anchor/target/idl/votee.json'
 import {globalActions} from "../../../store/globalSlices";
-import {Poll} from "@/app/utils/interfaces";
+import {Candidate, Poll} from "@/app/utils/interfaces";
 import {store} from "../../../store";
 
 let tx
@@ -144,6 +144,51 @@ export const createPoll = async (
     return tx
 }
 
+export const registerCandidate = async (
+    program: Program<Votee>,
+    publicKey: PublicKey,
+    pollId: number,
+    name: string
+) : Promise<TransactionSignature> => {
+    const PID = new BN(pollId);
+    const [pollPDA] = PublicKey.findProgramAddressSync(
+        [PID.toArrayLike(Buffer, 'le', 8)],
+        programId
+    )
+
+    const [registerationsPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from('registerations')],
+        programId
+    )
+
+    const regs = await program.account.registerations.fetch(registerationsPDA)
+    const CID = regs.count.add(new BN(1))
+
+    const [candidatePda] = PublicKey.findProgramAddressSync(
+        [PID.toArrayLike(Buffer, 'le', 8), CID.toArrayLike(Buffer, 'le', 8)],
+        programId
+    )
+
+    tx = await program.methods
+        .registerCandidate(PID, name)
+        .accountsPartial({
+            user: publicKey,
+            poll: pollPDA,
+            registerations: registerationsPDA,
+            candidate: candidatePda,
+            systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+
+    const connection = new Connection(
+        program.provider.connection.rpcEndpoint,
+        'confirmed'
+    )
+    await connection.confirmTransaction(tx, 'finalized')
+
+    return tx
+}
+
 export const fetchAllPolls = async (
     program: Program<Votee>,
 ) : Promise<Poll[]> => {
@@ -168,6 +213,36 @@ export const fetchPollDetails = async (
     return serialized
 
 }
+
+export const fetchAllCandidates = async (
+    program: Program<Votee>,
+    pollAddress: string
+) : Promise<Candidate[]> => {
+    const poll = await fetchPollDetails(program, pollAddress)
+    if(!poll) return []
+
+    const PID = new BN(poll.id)
+    const candidatesData = await program.account.candidate.all()
+
+    const candidates = candidatesData.filter((candidate) => {
+        // Assuming the candidate account has a field `pollId` or equivalent
+        return candidate.account.pollId.eq(PID)
+    })
+
+    store.dispatch(setCandidates(serializedCandidates(candidates)))
+    return candidates as unknown as Candidate[]
+}
+
+const serializedCandidates = (candidates: any[]): Candidate[] =>
+    candidates.map((c: any) => ({
+        ...c.account,
+        publicKey: c.publicKey.toBase58(), // Convert to string
+        cid: c.account.cid.toNumber(),
+        pollId: c.account.pollId.toNumber(),
+        votes: c.account.votes.toNumber(),
+        name: c.account.name,
+    }))
+
 
 const serializedPoll = (polls: any[]): Poll[] =>
     polls.map((c: any) => ({

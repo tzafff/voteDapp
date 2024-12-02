@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, {useMemo, useState} from 'react'
 import { FaTimes } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import {useDispatch, useSelector} from "react-redux";
 import {globalActions} from "../../../store/globalSlices";
 import {RootState} from "@/app/utils/interfaces";
+import {useWallet} from "@solana/wallet-adapter-react";
+import {fetchAllCandidates, fetchPollDetails, getProvider, registerCandidate} from "@/app/service/blockchain";
 
 const RegCandidate = ({
   pollId,
@@ -17,21 +19,29 @@ const RegCandidate = ({
   const { setRegModal } = globalActions
   const { regModal } = useSelector((states: RootState) => states.globalStates)
 
+  const { publicKey, sendTransaction, signTransaction } = useWallet()
+  const program = useMemo(
+      () => getProvider(publicKey, signTransaction, sendTransaction),
+      [publicKey, signTransaction, sendTransaction]
+  )
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!candidateName) return
+    if (!program || !publicKey || !candidateName) return
 
     await toast.promise(
-      new Promise<void>((resolve, reject) => {
+      new Promise<void>(async (resolve, reject) => {
         try {
-          console.log(
-            `Registering candidate: ${candidateName} for poll: ${pollId}`
-          )
-          // Simulate successful registration
-          setTimeout(() => {
-            setCandidateName('')
-            resolve()
-          }, 1000)
+          const tx = await registerCandidate(program!, publicKey!, pollId, candidateName)
+          setCandidateName('')
+          dispatch(setRegModal('scale-0'))
+
+          await fetchPollDetails(program!, pollAddress)
+          await fetchAllCandidates(program!, pollAddress)
+
+          console.log(tx)
+          resolve(tx as any)
+
         } catch (error) {
           console.error('Registration failed:', error)
           reject(error)

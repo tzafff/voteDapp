@@ -4,12 +4,12 @@ import React, {useEffect, useMemo} from 'react'
 import { FaRegEdit } from 'react-icons/fa'
 import CandidateList from '@/app/components/CandidateList'
 import RegCandidate from '@/app/components/RegCandidate'
-import {Candidate, Poll, RootState} from '@/app/utils/interfaces'
+import { RootState} from '@/app/utils/interfaces'
 import {useDispatch, useSelector} from "react-redux";
 import {globalActions} from "../../../../store/globalSlices";
 import {useParams} from "next/navigation";
 import {useWallet} from "@solana/wallet-adapter-react";
-import {fetchPollDetails, getReadonlyProvider} from "@/app/service/blockchain";
+import {fetchAllCandidates, fetchPollDetails, getReadonlyProvider} from "@/app/service/blockchain";
 
 export default function PollDetails() {
 
@@ -18,7 +18,7 @@ export default function PollDetails() {
   const { publicKey } = useWallet()
   const { pollId } = useParams();
 
-  const { poll } = useSelector((states: RootState) => states.globalStates)
+  const { poll, candidates } = useSelector((states: RootState) => states.globalStates)
   const program = useMemo(() => getReadonlyProvider(), [])
 
 
@@ -26,31 +26,15 @@ export default function PollDetails() {
     if(!program || !pollId) return
 
     const fetchDetails = async () => {
-      await fetchPollDetails(program, pollId as string);
+      await fetchPollDetails(program!, pollId as string);
+      await fetchAllCandidates(program!, pollId as string);
     }
 
     fetchDetails()
   }, [program, pollId]);
 
 
-  const candidates: Candidate[] = [
-    {
-      publicKey: 'dummy_public_key_1',
-      cid: 1001,
-      pollId: 101,
-      name: 'Candidate A',
-      votes: 0,
-      hasRegistered: false,
-    },
-    {
-      publicKey: 'dummy_public_key_2',
-      cid: 1002,
-      pollId: 101,
-      name: 'Candidate B',
-      votes: 0,
-      hasRegistered: false,
-    },
-  ]
+
 
   if (!poll) {
     return (
