@@ -189,6 +189,81 @@ export const registerCandidate = async (
     return tx
 }
 
+export const vote = async (
+    program: Program<Votee>,
+    publicKey: PublicKey,
+    pollId: number,
+    candidateId: number
+): Promise<TransactionSignature> => {
+    const PID = new BN(pollId)
+    const CID = new BN(candidateId)
+
+    const [pollPda] = PublicKey.findProgramAddressSync(
+        [PID.toArrayLike(Buffer, 'le', 8)],
+        programId
+    )
+    const [voterPDA] = PublicKey.findProgramAddressSync(
+        [
+            Buffer.from('voter'),
+            PID.toArrayLike(Buffer, 'le', 8),
+            publicKey.toBuffer(),
+        ],
+        programId
+    )
+    const [candidatePda] = PublicKey.findProgramAddressSync(
+        [PID.toArrayLike(Buffer, 'le', 8), CID.toArrayLike(Buffer, 'le', 8)],
+        programId
+    )
+
+    tx = await program.methods
+        .vote(PID, CID)
+        .accountsPartial({
+            user: publicKey,
+            poll: pollPda,
+            candidate: candidatePda,
+            voter: voterPDA,
+            systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+
+    const connection = new Connection(
+        program.provider.connection.rpcEndpoint,
+        'confirmed'
+    )
+    await connection.confirmTransaction(tx, 'finalized')
+
+    return tx
+}
+
+export const hasUserVoted = async (
+    program: Program<Votee>,
+    publicKey: PublicKey,
+    pollId: number
+): Promise<boolean> => {
+    const PID = new BN(pollId)
+
+    const [voterPda] = PublicKey.findProgramAddressSync(
+        [
+            Buffer.from('voter'),
+            PID.toArrayLike(Buffer, 'le', 8),
+            publicKey.toBuffer(),
+        ],
+        programId
+    )
+
+    try {
+        const voterAccount = await program.account.voter.fetch(voterPda)
+        if (!voterAccount || !voterAccount.hasVoted) {
+            return false // Default value if no account exists or hasn't voted
+        }
+
+        return true
+    } catch (error) {
+        console.error('Error fetching voter account:', error)
+        return false
+    }
+}
+
 export const fetchAllPolls = async (
     program: Program<Votee>,
 ) : Promise<Poll[]> => {
